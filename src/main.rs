@@ -1,12 +1,19 @@
-#[macro_use]
-extern crate rocket;
-
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, from Rocket!"
-}
+use rocket::{get, launch, routes};
+use rocket::fs::{FileServer, Options, relative};
+use rocket_dyn_templates::{context, Template};
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    rocket::build()
+        // add templating system
+        .attach(Template::fairing())
+        // serve content from disk
+        .mount("/public", FileServer::new(relative!("/public"), Options::Missing | Options::NormalizeDirs))
+        // register routes
+        .mount("/", routes![root])
+}
+
+#[get("/")]
+async fn root() -> Template {
+    Template::render("index", context! { message: "The world's coldest engineering"})
 }
